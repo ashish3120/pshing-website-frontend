@@ -33,7 +33,8 @@ def predict():
         df = pd.DataFrame([row])
 
         pred = model.predict(df)[0]
-        label = "phishing" if pred == 1 else "legitimate"
+        # FIX: Model was trained with inverted labels (1=legitimate, 0=phishing)
+        label = "legitimate" if pred == 1 else "phishing"
 
         prob = None
         if hasattr(model, "predict_proba"):
