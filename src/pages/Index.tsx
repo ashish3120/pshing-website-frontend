@@ -7,7 +7,7 @@ import ResultCard from "@/components/ResultCard";
 import HowItWorks from "@/components/HowItWorks";
 import ExampleUrls from "@/components/ExampleUrls";
 import StatsCounter from "@/components/StatsCounter";
-import { analyzeUrl } from "@/lib/phishingDetector";
+import { predictUrl } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 type Status = 'idle' | 'scanning' | 'result';
@@ -35,20 +35,27 @@ const Index = () => {
     }
 
     setStatus('scanning');
-    
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 2500 + Math.random() * 1500));
-    
-    const analysisResult = analyzeUrl(url);
-    setResult(analysisResult);
-    setStatus('result');
-    
-    toast({
-      title: analysisResult.isPhishing ? "⚠️ Phishing Detected" : "✓ URL is Safe",
-      description: analysisResult.isPhishing 
-        ? "This URL shows signs of being malicious" 
-        : "This URL appears to be legitimate",
-    });
+
+    try {
+      // Call the backend API for prediction
+      const analysisResult = await predictUrl(url);
+      setResult(analysisResult);
+      setStatus('result');
+
+      toast({
+        title: analysisResult.isPhishing ? "⚠️ Phishing Detected" : "✓ URL is Safe",
+        description: analysisResult.isPhishing
+          ? "This URL shows signs of being malicious"
+          : "This URL appears to be legitimate",
+      });
+    } catch (error) {
+      setStatus('idle');
+      toast({
+        title: "Analysis Failed",
+        description: error instanceof Error ? error.message : "Unable to analyze URL. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleReset = () => {
@@ -66,24 +73,24 @@ const Index = () => {
   return (
     <div className="min-h-screen relative overflow-hidden">
       <BackgroundGrid />
-      
+
       <main className="relative z-10 container mx-auto px-4 py-8 md:py-16">
         {/* Hero Section */}
         <section className="text-center mb-16">
           <div className="mb-8 animate-float">
-            <ShieldIcon 
-              status={status === 'scanning' ? 'scanning' : 'idle'} 
+            <ShieldIcon
+              status={status === 'scanning' ? 'scanning' : 'idle'}
               className="mx-auto"
             />
           </div>
-          
+
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
             <span className="text-gradient-primary">Phishing URL</span>{" "}
             <span className="text-foreground">Detector</span>
           </h1>
-          
+
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12">
-            AI-powered protection against malicious websites. 
+            AI-powered protection against malicious websites.
             <span className="text-primary"> Instant analysis. Zero risk.</span>
           </p>
 
@@ -104,7 +111,7 @@ const Index = () => {
                       disabled={status === 'scanning'}
                     />
                   </div>
-                  <Button 
+                  <Button
                     onClick={handleAnalyze}
                     variant="cyber"
                     size="xl"
@@ -125,7 +132,7 @@ const Index = () => {
                   </Button>
                 </div>
               </div>
-              
+
               {status === 'scanning' && (
                 <p className="text-sm text-muted-foreground animate-pulse">
                   Analyzing URL for phishing indicators...
